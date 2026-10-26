@@ -99,12 +99,9 @@ JInstr   → JOP ID
 
 ## Submission checklist (per subject ZIP)
 
-* ZIP name: `StudentName_SubjectName_MicroProject.zip` (e.g. `Diya_FLAT_MicroProject.zip`)
+* ZIP name: Diya_FLAT_MicroProject.zip
 * Contains: this project folder + that subject's report (PDF/DOCX) + screenshots
-* GitHub repository: **<paste link here>**
-* Deployed application: **<paste Streamlit Community Cloud link here>**
+* GitHub repository: https://github.com/diyaaaaaa790/PipSched.git
+* Deployed application: https://diyapipsched.streamlit.app/
 
-## Deploy (free)
 
-1. Push this folder to a GitHub repository (`app.py` and `requirements.txt` at the repo root).
-2. Go to share.streamlit.io → *New app* → pick the repo, branch `main`, main file `app.py` → Deploy.
