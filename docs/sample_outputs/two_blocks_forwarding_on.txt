@@ -1,0 +1,85 @@
+=== FLAT: parsing ===
+  OK - 11 instructions, labels: ['done']
+
+Grammar:
+Program  → Lines
+Lines    → Line Lines  |  ε
+Line     → ID COLON OptInstr NL  |  Instr NL
+OptInstr → Instr  |  ε
+Instr    → RInstr  |  IInstr  |  MemInstr  |  BrInstr  |  JInstr  |  NOP
+RInstr   → ROP REG COMMA REG COMMA REG
+IInstr   → IOP REG COMMA REG COMMA NUM
+MemInstr → MEMOP REG COMMA NUM LPAREN REG RPAREN
+BrInstr  → BROP REG COMMA REG COMMA ID
+JInstr   → JOP ID
+
+Parse tree of line 2:
+Line
+├── Instr
+│   └── MemInstr
+│       ├── MEMOP  'LW'
+│       ├── REG  'R1'
+│       ├── COMMA  ','
+│       ├── NUM  '0'
+│       ├── LPAREN  '('
+│       ├── REG  'R2'
+│       └── RPAREN  ')'
+└── NL  '\n'
+
+Leftmost derivation:
+  => <Line>
+  => <Instr> \n
+  => <MemInstr> \n
+  => LW R1 , 0 ( R2 ) \n
+
+=== DAA: dependency DAG + Kahn's algorithm ===
+  block 1: instrs 1-5  V=5 E=7  moved=2  valid-topological-order=True  est. cycles 11->9
+  block 2: instrs 6-10  V=5 E=6  moved=2  valid-topological-order=True  est. cycles 11->9
+  block 3: instrs 11-11  V=1 E=0  moved=0  valid-topological-order=True  est. cycles 5->5
+
+Optimized program:
+    LW R1, 0(R2)
+    LW R4, 4(R2)
+    ADD R3, R1, R1
+    SUB R5, R4, R3
+    BEQ R5, R0, done
+    LW R6, 8(R2)
+    LW R8, 12(R2)
+    ADD R7, R6, R5
+    OR R9, R8, R7
+    SW R9, 16(R2)
+done:
+    SW R5, 20(R2)
+
+=== COA: pipeline ===
+  before: cycles=19  instr=11  CPI=1.73  data-stalls=4  control-bubbles=0
+  after : cycles=15  instr=11  CPI=1.36  data-stalls=0  control-bubbles=0
+  speedup = 1.27x   equivalence: equivalent (identical registers and memory on 3 random initial states)
+
+Pipeline diagram (original):
+                    |    1    2    3    4    5    6    7    8    9   10   11   12   13   14   15   16   17   18   19
+1. LW R1, 0(R2)     |   IF   ID   EX  MEM   WB                                                                      
+2. ADD R3, R1, R1   |        IF   ID   --   EX  MEM   WB                                                            
+3. LW R4, 4(R2)     |             IF   --   ID   EX  MEM   WB                                                       
+4. SUB R5, R4, R3   |                       IF   ID   --   EX  MEM   WB                                             
+5. BEQ R5, R0, done |                            IF   --   ID   EX  MEM   WB                                        
+6. LW R6, 8(R2)     |                                      IF   ID   EX  MEM   WB                                   
+7. ADD R7, R6, R5   |                                           IF   ID   --   EX  MEM   WB                         
+8. LW R8, 12(R2)    |                                                IF   --   ID   EX  MEM   WB                    
+9. OR R9, R8, R7    |                                                          IF   ID   --   EX  MEM   WB          
+10. SW R9, 16(R2)   |                                                               IF   --   ID   EX  MEM   WB     
+11. SW R5, 20(R2)   |                                                                         IF   ID   EX  MEM   WB
+
+Pipeline diagram (optimized):
+                    |    1    2    3    4    5    6    7    8    9   10   11   12   13   14   15
+1. LW R1, 0(R2)     |   IF   ID   EX  MEM   WB                                                  
+2. LW R4, 4(R2)     |        IF   ID   EX  MEM   WB                                             
+3. ADD R3, R1, R1   |             IF   ID   EX  MEM   WB                                        
+4. SUB R5, R4, R3   |                  IF   ID   EX  MEM   WB                                   
+5. BEQ R5, R0, done |                       IF   ID   EX  MEM   WB                              
+6. LW R6, 8(R2)     |                            IF   ID   EX  MEM   WB                         
+7. LW R8, 12(R2)    |                                 IF   ID   EX  MEM   WB                    
+8. ADD R7, R6, R5   |                                      IF   ID   EX  MEM   WB               
+9. OR R9, R8, R7    |                                           IF   ID   EX  MEM   WB          
+10. SW R9, 16(R2)   |                                                IF   ID   EX  MEM   WB     
+11. SW R5, 20(R2)   |                                                     IF   ID   EX  MEM   WB

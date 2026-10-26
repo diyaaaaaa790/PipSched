@@ -1,0 +1,17 @@
+=== FLAT: parsing ===
+  line 2:12  [syntax] expected ',', found 'R3'
+      ADD R1, R2 R3          # missing comma
+  line 3:37  [syntax] expected ')', found end of line
+      LW R4, 0(R2            # missing ')'
+  line 4:1  [syntax] unknown instruction 'FOO' (a label needs a ':' after it)
+      FOO R1, R2, R3         # unknown instruction
+  line 5:14  [syntax] expected a number, found 'R3'
+      ADDI R1, R2, R3        # register where a number is expected
+  line 6:1  [semantic] undefined label 'nowhere'
+      BEQ R1, R2, nowhere    # undefined label
+  line 7:5  [syntax] register R40 does not exist (valid: R0-R31)
+      SUB R40, R1, R2        # register out of range
+  line 8:7  [syntax] expected an instruction or end of line, found 'loop2'
+      loop: loop2: NOP       # two labels on one line
+  line 9:1  [syntax] expected an instruction or a label, found illegal character '@'
+      @
